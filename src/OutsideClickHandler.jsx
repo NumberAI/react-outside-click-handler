@@ -38,13 +38,17 @@ export default class OutsideClickHandler extends React.Component {
 
     this.onMouseDown = this.onMouseDown.bind(this);
     this.onMouseUp = this.onMouseUp.bind(this);
+    this.onKeyDown = this.onKeyDown.bind(this);
     this.setChildNodeRef = this.setChildNodeRef.bind(this);
   }
 
   componentDidMount() {
     const { disabled, useCapture } = this.props;
 
-    if (!disabled) this.addMouseDownEventListener(useCapture);
+    if (!disabled) {
+      this.addKeyDownEventListener(useCapture);
+      this.addMouseDownEventListener(useCapture);
+    }
   }
 
   componentDidUpdate({ disabled: prevDisabled }) {
@@ -53,6 +57,7 @@ export default class OutsideClickHandler extends React.Component {
       if (disabled) {
         this.removeEventListeners();
       } else {
+        this.addKeyDownEventListener(useCapture);
         this.addMouseDownEventListener(useCapture);
       }
     }
@@ -100,6 +105,15 @@ export default class OutsideClickHandler extends React.Component {
     }
   }
 
+  onKeyDown(e) {
+    const { onOutsideClick } = this.props;
+
+    const isDescendantOfRoot = this.childNode && contains(this.childNode, e.target);
+    if (!isDescendantOfRoot) {
+      onOutsideClick(e);
+    }
+  }
+
   setChildNodeRef(ref) {
     this.childNode = ref;
   }
@@ -113,9 +127,16 @@ export default class OutsideClickHandler extends React.Component {
     );
   }
 
+  addKeyDownEventListener(useCapture) {
+    this.removeKeyDown = addEventListener(document, 'keydown', this.onKeyDown, {
+      capture: useCapture,
+    });
+  }
+
   removeEventListeners() {
     if (this.removeMouseDown) this.removeMouseDown();
     if (this.removeMouseUp) this.removeMouseUp();
+    if (this.removeKeyDown) this.removeKeyDown();
   }
 
   render() {
